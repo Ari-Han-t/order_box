@@ -16,7 +16,10 @@ public class WebFrontendServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getPathInfo();
+        String path = req.getRequestURI();
+        if (req.getContextPath() != null && !req.getContextPath().isEmpty() && path.startsWith(req.getContextPath())) {
+            path = path.substring(req.getContextPath().length());
+        }
         if (path == null || path.isEmpty() || path.equals("/")) {
             path = "/index.html";
         }
