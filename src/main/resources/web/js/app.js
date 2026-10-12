@@ -48,12 +48,17 @@
         stocks: {},
         portfolio: null,
         theme: localStorage.getItem('aura_theme') || 'dark',
-        isPolling: true
+        isPolling: true,
+        mobileView: 'trade'
     };
 
     // DOM Elements Cache
     const el = {
         html: document.documentElement,
+        workspace: document.getElementById('terminal-workspace'),
+        mobileViewNav: document.getElementById('mobile-view-nav'),
+        mobileNavBtns: document.querySelectorAll('.mobile-nav-btn'),
+        mNavOrdersCount: document.getElementById('m-nav-orders-count'),
         themeBtn: document.getElementById('theme-toggle-btn'),
         themeIcon: document.getElementById('theme-icon'),
         themeLabel: document.getElementById('theme-label'),
@@ -148,6 +153,21 @@
     function toggleTheme() {
         const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
         applyTheme(nextTheme);
+    }
+
+    // -------------------------------------------------------------------------
+    // Mobile Viewport Navigation
+    // -------------------------------------------------------------------------
+    function setMobileView(view) {
+        state.mobileView = view;
+        if (el.workspace) {
+            el.workspace.setAttribute('data-active-view', view);
+        }
+        if (el.mobileNavBtns) {
+            el.mobileNavBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -366,6 +386,9 @@
 
     function renderOpenOrders(orders) {
         el.openOrdersBadge.textContent = orders.length;
+        if (el.mNavOrdersCount) {
+            el.mNavOrdersCount.textContent = orders.length;
+        }
         if (!orders || orders.length === 0) {
             el.openOrdersList.innerHTML = '<div class="book-placeholder">No resting orders for this account.</div>';
             return;
@@ -573,6 +596,15 @@
         // Theme Toggle
         el.themeBtn.addEventListener('click', toggleTheme);
 
+        // Mobile Segmented View Switcher Listeners
+        if (el.mobileNavBtns) {
+            el.mobileNavBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setMobileView(btn.dataset.view);
+                });
+            });
+        }
+
         // Equity Ticker Selection
         el.tickerTrack.addEventListener('click', (e) => {
             const btn = e.target.closest('.ticker-tab-btn');
@@ -581,6 +613,7 @@
             if (sym && sym !== state.symbol) {
                 state.symbol = sym;
                 document.querySelectorAll('.ticker-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.symbol === sym));
+                btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 updateHeroHeader();
                 syncAll();
             }
@@ -695,9 +728,15 @@
             if (state.orderType === 'LIMIT') {
                 el.orderPriceInput.value = Number(price).toFixed(2);
                 recalcNotional();
+                if (window.innerWidth <= 860) {
+                    setMobileView('trade');
+                    el.orderPriceInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.orderPriceInput.focus();
+                }
             }
         },
-        cancelOrder: cancelOrder
+        cancelOrder: cancelOrder,
+        setView: setMobileView
     };
 
     // -------------------------------------------------------------------------
@@ -705,6 +744,7 @@
     // -------------------------------------------------------------------------
     async function init() {
         applyTheme(state.theme);
+        setMobileView('trade');
         initListeners();
         await syncAll();
 

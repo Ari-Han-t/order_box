@@ -1226,23 +1226,261 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   Responsive Adaptations
+   Mobile Segmented Navigation Bar (Hidden on Desktop)
    -------------------------------------------------------------------------- */
-@media (max-width: 1100px) {
+.mobile-view-nav {
+    display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Adaptations & Mobile Architecture
+   -------------------------------------------------------------------------- */
+@media (max-width: 1180px) {
     .terminal-workspace {
-        grid-template-columns: 290px 1fr;
+        grid-template-columns: 310px 1fr;
     }
     .activity-panel {
         grid-column: 1 / -1;
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
+    /* Sticky Top Header Organization */
     .app-header {
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        gap: 8px;
+        position: relative; /* Allow natural scroll or compact positioning */
+    }
+
+    .header-brand-block {
+        order: 1;
+    }
+
+    .header-controls {
+        order: 2;
+        margin-left: auto;
+    }
+
+    .market-ticker-strip {
+        order: 3;
+        width: 100%;
+        margin-top: 2px;
+        border-top: 1px solid var(--border-subtle);
+        padding-top: 6px;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+    }
+
+    /* Show Mobile Segmented Navigation Bar */
+    .mobile-view-nav {
+        display: flex;
+        position: sticky;
+        top: 0;
+        z-index: 95;
+        background-color: var(--bg-surface-1);
+        border-bottom: 1px solid var(--border-main);
+        padding: 6px 10px;
+        gap: 6px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .mobile-view-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mobile-nav-btn {
+        flex: 1;
+        min-width: 62px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--text-muted);
+        border-radius: var(--radius-xs);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: all 0.12s ease;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-nav-btn:active {
+        transform: scale(0.97);
+    }
+
+    .mobile-nav-btn.active {
+        background-color: var(--bg-surface-2);
+        border-color: var(--border-focus);
+        color: var(--text-primary);
+    }
+
+    .m-nav-icon {
+        font-size: 0.85rem;
+    }
+
+    .m-nav-badge {
+        background-color: var(--border-main);
+        color: var(--text-primary);
+        font-size: 0.60rem;
+        padding: 1px 5px;
+        border-radius: 999px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Terminal Workspace on Mobile */
+    .terminal-workspace {
+        display: flex;
+        flex-direction: column;
+        padding: 8px 10px;
+        gap: 10px;
+    }
+
+    /* Tabbed Panel Visibility on Mobile */
+    .terminal-workspace:not([data-active-view="all"]) #panel-orderbook,
+    .terminal-workspace:not([data-active-view="all"]) #panel-ticket,
+    .terminal-workspace:not([data-active-view="all"]) #panel-activity,
+    .terminal-workspace:not([data-active-view="all"]) #panel-portfolio {
+        display: none !important;
+    }
+
+    .terminal-workspace[data-active-view="trade"] #panel-ticket {
+        display: flex !important;
+    }
+
+    .terminal-workspace[data-active-view="book"] #panel-orderbook {
+        display: flex !important;
+    }
+
+    .terminal-workspace[data-active-view="activity"] #panel-activity {
+        display: flex !important;
+    }
+
+    .terminal-workspace[data-active-view="portfolio"] #panel-portfolio {
+        display: flex !important;
+    }
+
+    .terminal-workspace[data-active-view="all"] .terminal-panel {
+        display: flex !important;
+    }
+
+    /* Better orderbook depth height when in standalone book view */
+    .terminal-workspace[data-active-view="book"] .ladder-scroll {
+        max-height: 290px;
+    }
+
+    /* Portfolio KPI Grid on Mobile */
+    .portfolio-panel .panel-header {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
-    .terminal-workspace {
-        grid-template-columns: 1fr;
+
+    .portfolio-kpis {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        width: 100%;
+    }
+
+    .kpi-block {
+        align-items: flex-start;
+        padding: 6px 10px;
+    }
+
+    .kpi-v {
+        font-size: 0.84rem;
+    }
+
+    /* Touch Controls & Ergonomics */
+    .field-input,
+    .field-select,
+    .trader-select {
+        font-size: 16px !important; /* Prevents iOS auto-zoom on input focus */
+    }
+
+    .side-tab {
+        height: 42px;
+        font-size: 0.85rem;
+    }
+
+    .size-pill {
+        height: 40px;
+        font-size: 0.78rem;
+    }
+
+    .submit-order-button {
+        height: 48px;
+        font-size: 0.88rem;
+    }
+
+    .ladder-row {
+        padding: 7px 12px;
+        cursor: pointer;
+    }
+
+    .ladder-row:active {
+        background-color: var(--bg-hover);
+    }
+}
+
+@media (max-width: 480px) {
+    .app-header {
+        padding: 6px 8px;
+    }
+
+    .brand-crest {
+        width: 28px;
+        height: 28px;
+    }
+
+    .brand-title {
+        font-size: 0.80rem;
+    }
+
+    .brand-subtitle {
+        display: none;
+    }
+
+    .engine-status-pill {
+        padding: 2px 6px;
+    }
+
+    .ctrl-btn {
+        padding: 5px 8px;
+        font-size: 0.70rem;
+    }
+
+    .theme-toggle-btn {
+        min-width: 58px;
+    }
+
+    .demo-btn span {
+        display: none;
+    }
+
+    .trader-selector-wrap {
+        padding: 2px 6px;
+    }
+
+    .trader-select {
+        max-width: 110px;
+    }
+
+    .hero-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+
+    .modal-container {
+        width: 95%;
+        max-height: 85vh;
     }
 }

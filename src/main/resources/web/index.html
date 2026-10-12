@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>AURA // Institutional Electronic Stock Exchange</title>
     <meta name="description" content="Institutional-grade electronic stock exchange simulation with concurrent price-time priority matching engine, L2 order book depth, and real-time portfolio management.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,10 +72,35 @@
         </div>
     </header>
 
+    <!-- Mobile Segmented View Switcher (Visible only on mobile/tablet <= 860px) -->
+    <nav class="mobile-view-nav" id="mobile-view-nav" aria-label="Mobile Terminal View Navigation">
+        <button type="button" class="mobile-nav-btn active" data-view="trade">
+            <span class="m-nav-icon">⚡</span>
+            <span class="m-nav-text">TRADE</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-view="book">
+            <span class="m-nav-icon">📊</span>
+            <span class="m-nav-text">BOOK</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-view="activity">
+            <span class="m-nav-icon">📋</span>
+            <span class="m-nav-text">ORDERS</span>
+            <span class="m-nav-badge" id="m-nav-orders-count">0</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-view="portfolio">
+            <span class="m-nav-icon">💼</span>
+            <span class="m-nav-text">ASSETS</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-view="all">
+            <span class="m-nav-icon">☰</span>
+            <span class="m-nav-text">ALL</span>
+        </button>
+    </nav>
+
     <!-- Main Workspace Layout -->
-    <main class="terminal-workspace">
+    <main class="terminal-workspace" id="terminal-workspace">
         <!-- Left Panel: L2 Order Book Ladder -->
-        <section class="terminal-panel orderbook-panel" aria-labelledby="ob-panel-title">
+        <section class="terminal-panel orderbook-panel" id="panel-orderbook" aria-labelledby="ob-panel-title">
             <div class="panel-header">
                 <div class="panel-title-group">
                     <h2 id="ob-panel-title" class="panel-title">ORDER BOOK</h2>
@@ -127,7 +152,7 @@
         </section>
 
         <!-- Center Panel: Market Summary & Order Execution Ticket -->
-        <section class="terminal-panel market-ticket-panel">
+        <section class="terminal-panel market-ticket-panel" id="panel-ticket">
             <!-- Active Stock Hero Card -->
             <div class="stock-hero-card">
                 <div class="hero-top-row">
@@ -241,7 +266,7 @@
         </section>
 
         <!-- Right Panel: Executions Tape & Open Orders -->
-        <section class="terminal-panel activity-panel">
+        <section class="terminal-panel activity-panel" id="panel-activity">
             <div class="activity-tabs">
                 <button type="button" class="act-tab active" id="tab-tape-btn">TRADE TAPE</button>
                 <button type="button" class="act-tab" id="tab-orders-btn">
@@ -271,7 +296,7 @@
         </section>
 
         <!-- Bottom Panel: Portfolio, Balance & Risk Matrix (Full Width) -->
-        <section class="terminal-panel portfolio-panel" aria-labelledby="portfolio-panel-title">
+        <section class="terminal-panel portfolio-panel" id="panel-portfolio" aria-labelledby="portfolio-panel-title">
             <div class="panel-header">
                 <div class="panel-title-group">
                     <h2 id="portfolio-panel-title" class="panel-title">ACCOUNT PORTFOLIO & RISK MATRIX</h2>
