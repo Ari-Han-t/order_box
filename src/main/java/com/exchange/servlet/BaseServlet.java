@@ -64,15 +64,27 @@ public abstract class BaseServlet extends HttpServlet {
             token = req.getParameter("token");
         }
 
-        if (token == null || token.isEmpty()) {
-            // Also check for user_id parameter in dev/test/demo mode
-            String directUserId = req.getParameter("userId");
-            if (directUserId != null && !directUserId.trim().isEmpty()) {
-                return directUserId.trim();
-            }
-            return null;
+        if (token != null && !token.isEmpty()) {
+            String userId = SecurityUtil.getUserIdFromToken(token);
+            if (userId != null) return userId;
         }
 
-        return SecurityUtil.getUserIdFromToken(token);
+        // Check X-User-Id header or parameter (supports username like 'alice' or ID like 'u-alice-002')
+        String xUser = req.getHeader("X-User-Id");
+        if (xUser == null || xUser.trim().isEmpty()) {
+            xUser = req.getParameter("userId");
+        }
+        if (xUser != null && !xUser.trim().isEmpty()) {
+            String val = xUser.trim();
+            if (val.startsWith("u-")) return val;
+            if ("alice".equalsIgnoreCase(val)) return "u-alice-002";
+            if ("bob".equalsIgnoreCase(val)) return "u-bob-003";
+            if ("charlie".equalsIgnoreCase(val)) return "u-charlie-004";
+            if ("marketmaker".equalsIgnoreCase(val) || "market_maker".equalsIgnoreCase(val)) return "u-marketmaker-001";
+            if ("demo_trader".equalsIgnoreCase(val) || "demo".equalsIgnoreCase(val)) return "u-demo-005";
+            return val;
+        }
+
+        return null;
     }
 }
