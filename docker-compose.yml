@@ -31,14 +31,14 @@ services:
       mysql:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "8085:8085"
     environment:
-      PORT: "8080"
+      PORT: "8085"
       DB_URL: "jdbc:mysql://mysql:3306/stock_exchange?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
       DB_USER: "root"
       DB_PASSWORD: "rootpassword"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8085/api/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

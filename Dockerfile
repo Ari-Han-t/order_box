@@ -23,12 +23,12 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=build /app/target/stock-exchange-simulation-1.0.0.jar app.jar
 
-ENV PORT=8080 \
+ENV PORT=8085 \
     DB_URL=jdbc:mysql://mysql:3306/stock_exchange?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC \
     DB_USER=root \
     DB_PASSWORD=rootpassword
 
-EXPOSE 8080
+EXPOSE 8085
 
 USER appuser
 
