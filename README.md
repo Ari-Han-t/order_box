@@ -276,9 +276,53 @@ mvn clean test
 
 ---
 
-## ☁️ Cloud Deployment Guidelines
+## ☁️ Cloud CI/CD & Free Cloud Deployment
 
-### 1. Google Cloud Run / AWS ECS
+### 1. Automated GitHub Actions CI/CD Pipeline
+The repository includes a ready-to-use pipeline at [`.github/workflows/ci.yml`](.github/workflows/ci.yml) that automatically runs on every push:
+1. **Build & Test:** Sets up Java 21, compiles with Maven, runs all 15 JUnit tests.
+2. **Headless Verification:** Runs the Slide 07 & 11 Demo Scenario to verify Maker-Price execution and portfolio balance updates.
+3. **Container Registry:** Builds the multi-stage Docker container and publishes it to GitHub Container Registry (`ghcr.io/ari-han-t/order_box:latest`).
+4. **Deploy Webhook:** Automatically pings your cloud deployment URL if `RENDER_DEPLOY_HOOK` secret is added.
+
+---
+
+### 2. Free Cloud Deployment (Option A: Render Blueprint — 1 Click)
+The repository contains a [`render.yaml`](render.yaml) blueprint for deploying on [Render](https://render.com) for free:
+
+1. Sign up / Log in to [Render](https://render.com) with GitHub.
+2. Click **New +** -> **Blueprint**.
+3. Select this repository: `Ari-Han-t/order_box`.
+4. Click **Apply**.
+5. Render automatically builds the multi-stage Dockerfile and deploys the backend with a free public URL (e.g. `https://stock-exchange-backend-xxxx.onrender.com`).
+6. Every time you `git push` to `main`, Render auto-redeploys the latest code!
+
+---
+
+### 3. Free Cloud Deployment (Option B: Railway — 1 Click)
+1. Sign up / Log in to [Railway](https://railway.app) with GitHub.
+2. Click **New Project** -> **Deploy from GitHub repo**.
+3. Select `Ari-Han-t/order_box`.
+4. Railway automatically detects `Dockerfile` and [`railway.json`](railway.json), builds the service, and provides a public domain.
+
+---
+
+### 4. Connecting the JavaFX Client to Your Cloud Exchange
+Once your backend is deployed to the cloud, anyone can connect their desktop trading terminal to it:
+
+**Windows Batch:**
+```cmd
+run-client.bat https://your-app-name.onrender.com
+```
+
+**PowerShell:**
+```powershell
+.\run-client.ps1 -Url "https://your-app-name.onrender.com"
+```
+
+---
+
+### 5. Google Cloud Run / AWS ECS
 Build and push the Docker container to Container Registry (GCR / ECR / Docker Hub):
 ```bash
 docker build -t your-org/stock-exchange:latest .
@@ -286,12 +330,7 @@ docker push your-org/stock-exchange:latest
 ```
 Deploy the container with environment variables:
 - `PORT=8080`
-- `DB_URL=jdbc:mysql://<cloud-sql-or-rds-host>:3306/stock_exchange?useSSL=true`
+- `DB_URL=jdbc:mysql://<cloud-sql-or-rds-host>:3306/stock_exchange?useSSL=true` (Optional: if omitted, falls back to embedded in-memory MySQL-mode H2 with auto-seed)
 - `DB_USER=<db-user>`
 - `DB_PASSWORD=<db-password>`
 
-### 2. Virtual Machine (AWS EC2 / DigitalOcean Droplet)
-1. Clone the repository on the server.
-2. Ensure Docker and Docker Compose are installed.
-3. Run `docker compose up -d`.
-4. Configure an Nginx reverse proxy or SSL termination with Certbot on port 443 pointing to `localhost:8085`.

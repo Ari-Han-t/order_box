@@ -1,0 +1,126 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # =========================================================================
+  # 1. Build & Test Job
+  # =========================================================================
+  test-and-verify:
+    name: Build, Test & Verify Demo Scenario
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Run JUnit 5 Test Suite (Order Book, Matching, Concurrency)
+        run: mvn clean test -B
+
+      - name: Package Executable Fat JAR
+        run: mvn package -DskipTests -B
+
+      - name: Run Scripted Presentation Demo Scenario (Headless CI Verification)
+        run: |
+          echo "================================================================="
+          echo "Executing Slides 07 & 11 Demo Scenario Verification in Cloud CI"
+          echo "================================================================="
+          java -cp target/stock-exchange-simulation-1.0.0.jar com.exchange.demo.LiveDemoRunner
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-test-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+      - name: Upload Shaded Executable JAR Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-exchange-executable-jar
+          path: target/stock-exchange-simulation-1.0.0.jar
+          retention-days: 14
+
+  # =========================================================================
+  # 2. Container Build & Publish Job (GitHub Packages / GHCR)
+  # =========================================================================
+  build-and-push-container:
+    name: Build & Publish Container Image (GHCR)
+    needs: test-and-verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata (Tags & Labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================================
+  # 3. Continuous Deployment Trigger (Optional Cloud Webhook)
+  # =========================================================================
+  deploy-cloud:
+    name: Trigger Cloud Deployment (Render / Webhook)
+    needs: build-and-push-container
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook (if secret configured)
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$DEPLOY_HOOK" ]; then
+            echo "Triggering cloud deploy webhook..."
+            curl -s -X POST "$DEPLOY_HOOK"
+            echo "Cloud deployment triggered successfully!"
+          else
+            echo "No RENDER_DEPLOY_HOOK secret detected. If using Render, Koyeb, or Railway,"
+            echo "the service automatically redeploys from the latest Git commit or GHCR image."
+          fi

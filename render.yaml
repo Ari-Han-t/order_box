@@ -1,0 +1,19 @@
+# =========================================================================
+# Render Infrastructure as Code Blueprint (render.yaml)
+# Deploy free cloud web service: https://render.com
+# =========================================================================
+
+services:
+  - type: web
+    name: stock-exchange-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: JAVA_OPTS
+        value: "-Xms256m -Xmx450m -XX:+UseG1GC"
+    healthCheckPath: /api/health
+    autoDeploy: true
