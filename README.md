@@ -128,7 +128,27 @@ All seeded accounts have the password: **`password123`**
 - **Maven 3.8+**
 - (Optional) **Docker Desktop** / **MySQL 8.0** (The system includes intelligent auto-detection: if MySQL is not running, it automatically uses an embedded in-memory database in MySQL compatibility mode with zero configuration!).
 
-### Option 1: Launch JavaFX Desktop Client (All-in-One)
+### Option 0: Master Launcher (Runs All Three: Server + Demo + JavaFX Client)
+Starts the backend server on port 8085, executes the slide demo scenario verification, and launches the JavaFX Trading Terminal GUI:
+
+**Windows Batch:**
+```cmd
+run-all.bat
+```
+
+**PowerShell:**
+```powershell
+.\run-all.ps1
+```
+
+**Linux / macOS:**
+```bash
+./run-all.sh
+```
+
+---
+
+### Option 1: Launch JavaFX Desktop Client Only
 The desktop client checks if the backend server is running; if not, it automatically boots the embedded backend in a background daemon thread!
 
 **Windows Batch:**

@@ -1,5 +1,5 @@
 Write-Host "=====================================================================" -ForegroundColor Cyan
-Write-Host "  Starting Electronic Stock Exchange Backend Server (Port 8080)" -ForegroundColor Cyan
+Write-Host "  Starting Electronic Stock Exchange Backend Server (Port 8085)" -ForegroundColor Cyan
 Write-Host "=====================================================================" -ForegroundColor Cyan
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path

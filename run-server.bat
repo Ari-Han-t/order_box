@@ -1,7 +1,7 @@
 @echo off
 setlocal
 echo =====================================================================
-echo   Starting Electronic Stock Exchange Backend Server (Port 8080)
+echo   Starting Electronic Stock Exchange Backend Server (Port 8085)
 echo =====================================================================
 
 cd /d "%~dp0"
