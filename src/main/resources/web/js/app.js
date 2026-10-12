@@ -1,174 +1,265 @@
 /**
- * AURA EXCHANGE — FINANCIAL TRADING DASHBOARD CLIENT SCRIPT
- * Handles real-time polling, L2 Order Book rendering, order execution,
- * portfolio tracking, and scripted presentation demo scenario visualizer.
+ * AURA EXCHANGE — INSTITUTIONAL MONOCHROMATIC TRADING CLIENT
+ * Features:
+ * - Real-time L2 Order Book depth rendering with cumulative size bars
+ * - High-resolution vector SVG stock logos for all 11 market equities
+ * - OLED Black / Swiss Minimalist White theme switcher with persistence
+ * - 8 distinct trader account personas
+ * - 1-click price copying, fraction sizing, and resting order cancellations
+ * - Slide 07 & 11 presentation matching scenario visualizer
  */
 
 (() => {
-    // Application State
+    // -------------------------------------------------------------------------
+    // Vector SVG Stock Logos Catalog (Clean Monochromatic Vectors)
+    // -------------------------------------------------------------------------
+    const STOCK_LOGOS = {
+        AAPL: `<svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.56-.68.95-1.62.84-2.57-.82.03-1.82.55-2.4 1.23-.52.6-.97 1.56-.85 2.48.92.07 1.85-.46 2.41-1.14z"/></svg>`,
+        MSFT: `<svg viewBox="0 0 24 24"><path d="M1 1h10v10H1V1zm12 0h10v10H13V1zM1 13h10v10H1V13zm12 0h10v10H13V13z"/></svg>`,
+        GOOGL: `<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 7.07 17.07l-2.83-2.83A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78l2.83-2.83A9.97 9.97 0 0 0 12 2zm1 8h7v4h-7v-4z"/></svg>`,
+        TSLA: `<svg viewBox="0 0 24 24"><path d="M12 4.5c2.8 0 5.4.7 7.7 2l-1 2.2c-2-1.1-4.2-1.7-6.7-1.7-2.5 0-4.7.6-6.7 1.7l-1-2.2c2.3-1.3 4.9-2 7.7-2zm0 3.8c1.7 0 3.4.4 5 1.1l-.8 2c-1.3-.6-2.7-.9-4.2-.9-1.5 0-2.9.3-4.2.9l-.8-2c1.6-.7 3.3-1.1 5-1.1zm-1 4.7h2v7h-2v-7z"/></svg>`,
+        NVDA: `<svg viewBox="0 0 24 24"><path d="M3.7 9.2c1.8-3.4 5-5.2 8.3-5.2 5 0 9 3.6 9 8 0 4.1-3.4 7.5-8 7.5-3.6 0-6.8-2.1-8-5.3 1.1 2.1 3.4 3.3 5.8 3.3 3.6 0 6.2-2.5 6.2-5.5 0-2.8-2.4-5-5.4-5-3.1 0-5.4 2-6.5 4.7zm3.1 2.8c.8-1.5 2.1-2.4 3.7-2.4 2 0 3.5 1.4 3.5 3.2 0 1.6-1.3 2.9-3.1 2.9-1.7 0-3.3-.9-4.1-2.5z"/></svg>`,
+        AMZN: `<svg viewBox="0 0 24 24"><path d="M13.9 12.1c-.2.8-.7 1.4-1.5 1.4-.7 0-1.1-.5-1.1-1.3 0-1.6 1.3-2.2 2.6-2.2v2.1zm2.3 4.4c-.2-.3-.3-.8-.3-1.3-.6.9-1.5 1.4-2.6 1.4-1.6 0-2.8-1-2.8-2.6 0-2 1.6-3 4-3v-.3c0-.6-.3-1.1-1.2-1.1-.8 0-1.6.3-2.1.7l-.6-1.1c.8-.6 1.9-.9 3-.9 2.1 0 3 1.2 3 3.1v3.5c0 .7.1 1.2.3 1.6h-1.7zm5.2 2.3c-7.7 4.2-16.7 1.8-20.4-.8-.4-.3 0-.7.4-.5 4.5 2.4 13.8 3.5 19.3-.1.6-.4 1.1.8.7 1.4zm1.5-1.2c-.4-.5-2.6-.3-3.9-.2-.3 0-.4-.3-.1-.5 1.7-1.1 4.5-.8 4.8-.4.3.4-.1 3.2-1.7 4.5-.3.2-.5.1-.4-.2.4-1 1.7-2.7 1.3-3.2z"/></svg>`,
+        META: `<svg viewBox="0 0 24 24"><path d="M16.9 5.2c-2.1 0-3.9 1.4-4.9 3-1-1.6-2.8-3-4.9-3C3.2 5.2.5 8.3.5 12.1c0 4.1 3 7.4 7.2 7.4 2.2 0 4.1-1.3 5.1-3 1 1.7 2.9 3 5.1 3 4.2 0 7.2-3.3 7.2-7.4 0-3.8-2.7-6.9-6.2-6.9zm-9.8 12c-2.8 0-4.8-2.2-4.8-5.1 0-2.6 1.8-4.8 4.3-4.8 1.9 0 3.5 1.5 4.3 3.4-.9 3.5-2.3 6.5-3.8 6.5zm9.8 0c-1.5 0-2.9-3-3.8-6.5.8-1.9 2.4-3.4 4.3-3.4 2.5 0 4.3 2.2 4.3 4.8 0 2.9-2 5.1-4.8 5.1z"/></svg>`,
+        AMD: `<svg viewBox="0 0 24 24"><path d="M1.5 1.5h14.2l-3.5 3.5H5v7.2L1.5 8.7V1.5zm21 0v14.2l-3.5-3.5V5h-7.2L15.3 1.5H22.5zm0 21H8.3l3.5-3.5H19v-7.2l3.5 3.5v7.2zM5.3 8.7l3.4 3.4v6.8H1.9L5.3 8.7z"/></svg>`,
+        PLTR: `<svg viewBox="0 0 24 24"><path d="M12 2a8 8 0 0 0-5.8 13.5l-3.7 3.7 1.4 1.4 3.7-3.7A8 8 0 1 0 12 2zm0 14a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>`,
+        COIN: `<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 16a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>`,
+        JPM: `<svg viewBox="0 0 24 24"><path d="M7.4 2h9.2l5.4 5.4v9.2l-5.4 5.4H7.4L2 16.6V7.4L7.4 2zm1.2 2.5L4.5 8.6v6.8l4.1 4.1h6.8l4.1-4.1V8.6l-4.1-4.1H8.6z"/></svg>`
+    };
+
+    // Trader Initials Map
+    const TRADER_AVATARS = {
+        alice: 'AS',
+        bob: 'BJ',
+        charlie: 'CB',
+        diana: 'DP',
+        edward: 'EN',
+        fiona: 'FG',
+        hedge_fund: 'AC',
+        market_maker: 'CS'
+    };
+
+    // Application Reactive State
     const state = {
         symbol: 'AAPL',
         trader: 'alice',
         side: 'BUY',
         orderType: 'LIMIT',
         stocks: {},
-        lastPrice: 200.00,
         portfolio: null,
+        theme: localStorage.getItem('aura_theme') || 'dark',
         isPolling: true
     };
 
-    // DOM Elements
-    const elements = {
-        symbolTabs: document.getElementById('symbol-tabs-container'),
+    // DOM Elements Cache
+    const el = {
+        html: document.documentElement,
+        themeBtn: document.getElementById('theme-toggle-btn'),
+        themeIcon: document.getElementById('theme-icon'),
+        themeLabel: document.getElementById('theme-label'),
         traderSelect: document.getElementById('trader-select'),
+        traderAvatar: document.getElementById('trader-avatar'),
         runDemoBtn: document.getElementById('run-demo-btn'),
-        engineStatusPill: document.getElementById('engine-status-pill'),
-        engineStatusText: document.getElementById('engine-status-text'),
+        tickerTrack: document.getElementById('ticker-scroll-track'),
 
         // Order Book
-        obSymbolBadge: document.getElementById('ob-symbol-badge'),
+        obSymbolTag: document.getElementById('ob-symbol-tag'),
+        obTotalDepth: document.getElementById('ob-total-depth'),
         asksContainer: document.getElementById('orderbook-asks-container'),
         bidsContainer: document.getElementById('orderbook-bids-container'),
         spreadValue: document.getElementById('spread-value'),
         spreadMid: document.getElementById('spread-mid'),
-        depthBarBid: document.getElementById('depth-bar-bid-fill'),
-        depthBarAsk: document.getElementById('depth-bar-ask-fill'),
-        bidTotalShares: document.getElementById('bid-total-shares'),
-        askTotalShares: document.getElementById('ask-total-shares'),
+        depthRatioBid: document.getElementById('depth-ratio-bid'),
+        depthRatioAsk: document.getElementById('depth-ratio-ask'),
+        depthTextBids: document.getElementById('depth-text-bids'),
+        depthTextAsks: document.getElementById('depth-text-asks'),
 
         // Hero
-        heroCompany: document.getElementById('hero-company-name'),
-        heroSymbolTicker: document.getElementById('hero-symbol-ticker'),
+        heroLogoFrame: document.getElementById('hero-logo-frame'),
+        heroSymbol: document.getElementById('hero-symbol'),
+        heroCompany: document.getElementById('hero-company'),
         heroLastPrice: document.getElementById('hero-last-price'),
-        heroPriceChange: document.getElementById('hero-price-change'),
-        heroBestBid: document.getElementById('hero-best-bid'),
-        heroBestAsk: document.getElementById('hero-best-ask'),
-        heroVolume: document.getElementById('hero-volume'),
+        heroChangePill: document.getElementById('hero-change-pill'),
+        statBestBid: document.getElementById('stat-best-bid'),
+        statBestAsk: document.getElementById('stat-best-ask'),
+        statPrevClose: document.getElementById('stat-prev-close'),
+        statVolume: document.getElementById('stat-volume'),
 
         // Order Ticket
         sideBuyBtn: document.getElementById('side-buy-btn'),
         sideSellBtn: document.getElementById('side-sell-btn'),
         orderTypeSelect: document.getElementById('order-type-select'),
-        priceInputGroup: document.getElementById('price-input-group'),
+        priceInputRow: document.getElementById('price-input-row'),
         orderPriceInput: document.getElementById('order-price-input'),
         orderQtyInput: document.getElementById('order-qty-input'),
-        availableHint: document.getElementById('available-resource-hint'),
-        orderEstTotal: document.getElementById('order-est-total'),
+        availResourceText: document.getElementById('avail-resource-text'),
+        orderEstNotional: document.getElementById('order-est-notional'),
         submitOrderBtn: document.getElementById('submit-order-btn'),
-        orderAlert: document.getElementById('order-feedback-alert'),
+        orderStatusMsg: document.getElementById('order-status-msg'),
 
-        // Trades & Orders
-        tabTradesFeed: document.getElementById('tab-trades-feed'),
-        tabMyOrders: document.getElementById('tab-my-orders'),
-        contentTradesFeed: document.getElementById('content-trades-feed'),
-        contentMyOrders: document.getElementById('content-my-orders'),
-        tradesFeedContainer: document.getElementById('trades-feed-container'),
-        myOpenOrdersContainer: document.getElementById('my-open-orders-container'),
-        openOrdersCount: document.getElementById('open-orders-count'),
+        // Activity Tabs
+        tabTapeBtn: document.getElementById('tab-tape-btn'),
+        tabOrdersBtn: document.getElementById('tab-orders-btn'),
+        bodyTradeTape: document.getElementById('body-trade-tape'),
+        bodyOpenOrders: document.getElementById('body-open-orders'),
+        tradesTapeList: document.getElementById('trades-tape-list'),
+        openOrdersList: document.getElementById('open-orders-list'),
+        openOrdersBadge: document.getElementById('open-orders-badge'),
 
         // Portfolio
-        portUserFullname: document.getElementById('port-user-fullname'),
-        portCashVal: document.getElementById('port-cash-val'),
-        portHoldingsVal: document.getElementById('port-holdings-val'),
-        portNetworthVal: document.getElementById('port-networth-val'),
-        portPnlVal: document.getElementById('port-pnl-val'),
-        holdingsTableBody: document.getElementById('holdings-table-body'),
+        portAccountName: document.getElementById('port-account-name'),
+        kpiCash: document.getElementById('kpi-cash'),
+        kpiEquity: document.getElementById('kpi-equity'),
+        kpiNetworth: document.getElementById('kpi-networth'),
+        kpiPnl: document.getElementById('kpi-pnl'),
+        holdingsTbody: document.getElementById('holdings-table-tbody'),
 
         // Modal
         demoModal: document.getElementById('demo-modal'),
-        demoModalBody: document.getElementById('demo-modal-body'),
-        modalCloseBtn: document.getElementById('modal-close-btn'),
-        modalDismissBtn: document.getElementById('modal-dismiss-btn'),
-        modalRerunBtn: document.getElementById('modal-rerun-btn')
+        demoModalContent: document.getElementById('demo-modal-content'),
+        modalCloseX: document.getElementById('modal-close-x'),
+        modalCloseAction: document.getElementById('modal-close-action'),
+        modalReplayAction: document.getElementById('modal-replay-action')
     };
 
-    // Helper: Formatter utilities
-    const formatCurrency = (val) => '$' + (Number(val) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const formatNumber = (val) => (Number(val) || 0).toLocaleString('en-US');
+    // -------------------------------------------------------------------------
+    // Utilities & Formatters
+    // -------------------------------------------------------------------------
+    const fmtMoney = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtNumber = (n) => (Number(n) || 0).toLocaleString('en-US');
 
-    // =========================================================================
-    // API Client Calls
-    // =========================================================================
-    async function apiRequest(endpoint, options = {}) {
-        const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    // -------------------------------------------------------------------------
+    // Theme Management (OLED Black vs Swiss White)
+    // -------------------------------------------------------------------------
+    function applyTheme(themeName) {
+        state.theme = themeName;
+        el.html.dataset.theme = themeName;
+        localStorage.setItem('aura_theme', themeName);
+
+        if (themeName === 'light') {
+            el.themeIcon.textContent = '○';
+            el.themeLabel.textContent = 'WHITE';
+        } else {
+            el.themeIcon.textContent = '◐';
+            el.themeLabel.textContent = 'OLED';
+        }
+    }
+
+    function toggleTheme() {
+        const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
+        applyTheme(nextTheme);
+    }
+
+    // -------------------------------------------------------------------------
+    // API Communication Client
+    // -------------------------------------------------------------------------
+    async function api(path, opts = {}) {
+        const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
         if (state.trader) {
             headers['X-User-Id'] = state.trader;
         }
-        const resp = await fetch(endpoint, { ...options, headers });
-        if (!resp.ok) {
-            const errBody = await resp.json().catch(() => ({ message: resp.statusText }));
-            throw new Error(errBody.error || errBody.message || 'API request failed');
+        const res = await fetch(path, { ...opts, headers });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: res.statusText }));
+            throw new Error(err.error || err.message || 'API Communication Failure');
         }
-        return resp.json();
+        return res.json();
     }
 
-    // =========================================================================
-    // Core Data Fetchers
-    // =========================================================================
-    async function fetchStocks() {
+    // -------------------------------------------------------------------------
+    // Data Ingestion & State Refreshers
+    // -------------------------------------------------------------------------
+    async function refreshStocks() {
         try {
-            const stocks = await apiRequest('/api/stocks');
-            stocks.forEach(stock => {
-                state.stocks[stock.symbol] = stock;
-                const tabPrice = document.getElementById(`nav-price-${stock.symbol}`);
-                if (tabPrice) tabPrice.textContent = formatCurrency(stock.currentPrice);
+            const stockList = await api('/api/stocks');
+            stockList.forEach(s => {
+                state.stocks[s.symbol] = s;
             });
-
-            const current = state.stocks[state.symbol];
-            if (current) {
-                elements.heroCompany.textContent = current.companyName;
-                elements.heroSymbolTicker.textContent = `${current.symbol} / USD`;
-                const changePct = current.changePercent || 0;
-                elements.heroPriceChange.textContent = `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`;
-                elements.heroPriceChange.className = `hero-badge ${changePct >= 0 ? 'badge-up' : 'badge-down'}`;
-            }
+            renderTickerStrip(stockList);
+            updateHeroHeader();
         } catch (e) {
-            console.warn('Stocks fetch error:', e.message);
+            console.warn('Stocks ingestion error:', e.message);
         }
     }
 
-    async function fetchOrderBook() {
+    async function refreshOrderBook() {
         try {
-            const data = await apiRequest(`/api/orderbook?symbol=${state.symbol}&depth=12`);
-            renderOrderBook(data);
+            const book = await api(`/api/orderbook?symbol=${state.symbol}&depth=15`);
+            renderOrderBook(book);
         } catch (e) {
-            console.warn('OrderBook fetch error:', e.message);
+            console.warn('Order book ingestion error:', e.message);
         }
     }
 
-    async function fetchTrades() {
+    async function refreshTrades() {
         try {
-            const trades = await apiRequest(`/api/trades?symbol=${state.symbol}&limit=25`);
-            renderTrades(trades);
+            const trades = await api(`/api/trades?symbol=${state.symbol}&limit=30`);
+            renderTradesTape(trades);
         } catch (e) {
-            console.warn('Trades fetch error:', e.message);
+            console.warn('Trades ingestion error:', e.message);
         }
     }
 
-    async function fetchPortfolio() {
+    async function refreshPortfolio() {
         try {
-            const port = await apiRequest('/api/portfolio');
-            state.portfolio = port;
-            renderPortfolio(port);
+            const p = await api('/api/portfolio');
+            state.portfolio = p;
+            renderPortfolio(p);
         } catch (e) {
-            console.warn('Portfolio fetch error:', e.message);
+            console.warn('Portfolio ingestion error:', e.message);
         }
     }
 
-    async function fetchOpenOrders() {
+    async function refreshOpenOrders() {
         try {
-            const orders = await apiRequest('/api/orders?activeOnly=true');
+            const orders = await api('/api/orders?activeOnly=true');
             renderOpenOrders(orders);
         } catch (e) {
-            console.warn('Open orders fetch error:', e.message);
+            console.warn('Open orders ingestion error:', e.message);
         }
     }
 
-    // =========================================================================
-    // Rendering Functions
-    // =========================================================================
+    // -------------------------------------------------------------------------
+    // UI Renderers
+    // -------------------------------------------------------------------------
+    function renderTickerStrip(stocks) {
+        if (!stocks || stocks.length === 0) return;
+
+        el.tickerTrack.innerHTML = stocks.map(s => {
+            const isActive = s.symbol === state.symbol;
+            const chg = s.changePercent || 0;
+            const diffClass = chg >= 0 ? 'text-bid' : 'text-ask';
+            const diffSign = chg >= 0 ? '+' : '';
+            const logoSvg = STOCK_LOGOS[s.symbol] || STOCK_LOGOS.AAPL;
+
+            return `
+                <button type="button" class="ticker-tab-btn ${isActive ? 'active' : ''}" data-symbol="${s.symbol}">
+                    <span class="tab-logo-icon">${logoSvg}</span>
+                    <span class="tab-sym">${s.symbol}</span>
+                    <span class="tab-val num-font">${fmtMoney(s.currentPrice)}</span>
+                    <span class="tab-diff num-font ${diffClass}">${diffSign}${chg.toFixed(2)}%</span>
+                </button>
+            `;
+        }).join('');
+    }
+
+    function updateHeroHeader() {
+        const s = state.stocks[state.symbol];
+        if (!s) return;
+
+        el.heroLogoFrame.innerHTML = STOCK_LOGOS[s.symbol] || STOCK_LOGOS.AAPL;
+        el.heroSymbol.textContent = s.symbol;
+        el.heroCompany.textContent = s.companyName;
+        el.statPrevClose.textContent = fmtMoney(s.previousClose || (s.currentPrice * 0.99));
+        el.statVolume.textContent = fmtNumber(s.totalVolume || 100000);
+
+        const chg = s.changePercent || 0;
+        el.heroChangePill.textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
+        el.heroChangePill.className = `hero-change-pill num-font ${chg >= 0 ? 'text-bid' : 'text-ask'}`;
+    }
+
     function renderOrderBook(book) {
-        elements.obSymbolBadge.textContent = state.symbol;
+        el.obSymbolTag.textContent = state.symbol;
         if (!book) return;
 
         const bids = book.bids || [];
@@ -177,54 +268,57 @@
         const bestBid = bids.length > 0 ? bids[0].price : null;
         const bestAsk = asks.length > 0 ? asks[0].price : null;
 
-        elements.heroBestBid.textContent = bestBid ? formatCurrency(bestBid) : '---';
-        elements.heroBestAsk.textContent = bestAsk ? formatCurrency(bestAsk) : '---';
-        if (book.lastPrice) {
-            elements.heroLastPrice.textContent = formatCurrency(book.lastPrice);
+        el.statBestBid.textContent = bestBid ? fmtMoney(bestBid) : '---';
+        el.statBestAsk.textContent = bestAsk ? fmtMoney(bestAsk) : '---';
+        if (book.lastPrice && book.lastPrice > 0) {
+            el.heroLastPrice.textContent = fmtMoney(book.lastPrice);
+        } else if (bestBid && bestAsk) {
+            el.heroLastPrice.textContent = fmtMoney((bestBid + bestAsk) / 2);
         }
 
-        // Spread Calculation
+        // Spread & Mid Calculation
         if (bestBid && bestAsk) {
             const spread = bestAsk - bestBid;
             const spreadPct = (spread / bestAsk) * 100;
             const mid = (bestBid + bestAsk) / 2;
-            elements.spreadValue.textContent = `${formatCurrency(spread)} (${spreadPct.toFixed(2)}%)`;
-            elements.spreadMid.textContent = `MID ${formatCurrency(mid)}`;
+            el.spreadValue.textContent = `${fmtMoney(spread)} (${spreadPct.toFixed(2)}%)`;
+            el.spreadMid.textContent = fmtMoney(mid);
         } else {
-            elements.spreadValue.textContent = 'NO ACTIVE SPREAD';
-            elements.spreadMid.textContent = '';
+            el.spreadValue.textContent = 'NO SPREAD';
+            el.spreadMid.textContent = '---';
         }
 
-        // Total Volumes for visual depth calculation
+        // Depth Ratios
         const totalBidVol = bids.reduce((acc, b) => acc + b.quantity, 0);
         const totalAskVol = asks.reduce((acc, a) => acc + a.quantity, 0);
-        const maxVol = Math.max(totalBidVol, totalAskVol, 1);
-
-        elements.bidTotalShares.textContent = `Bids: ${formatNumber(totalBidVol)} sh`;
-        elements.askTotalShares.textContent = `Asks: ${formatNumber(totalAskVol)} sh`;
-
         const totalDepth = totalBidVol + totalAskVol;
+        el.obTotalDepth.textContent = `DEPTH: ${fmtNumber(totalDepth)}`;
+
         if (totalDepth > 0) {
             const bidPct = Math.round((totalBidVol / totalDepth) * 100);
-            elements.depthBarBid.style.width = `${bidPct}%`;
-            elements.depthBarAsk.style.width = `${100 - bidPct}%`;
+            el.depthRatioBid.style.width = `${bidPct}%`;
+            el.depthRatioAsk.style.width = `${100 - bidPct}%`;
+            el.depthTextBids.textContent = `BID: ${bidPct}% (${fmtNumber(totalBidVol)})`;
+            el.depthTextAsks.textContent = `ASK: ${100 - bidPct}% (${fmtNumber(totalAskVol)})`;
         }
 
-        // Render Asks (Render inverted: highest down to lowest/best ask)
+        const maxVol = Math.max(totalBidVol, totalAskVol, 1);
+
+        // Render Asks (Inverted order: highest to lowest down to best ask)
         const reversedAsks = [...asks].reverse();
         if (reversedAsks.length === 0) {
-            elements.asksContainer.innerHTML = '<div class="ob-empty-state">No active ask orders</div>';
+            el.asksContainer.innerHTML = '<div class="book-placeholder">No active asks</div>';
         } else {
-            let askRunningTotal = 0;
-            elements.asksContainer.innerHTML = reversedAsks.map(ask => {
-                askRunningTotal += ask.quantity;
-                const widthPct = Math.min(100, Math.round((ask.quantity / maxVol) * 100));
+            let running = 0;
+            el.asksContainer.innerHTML = reversedAsks.map(a => {
+                running += a.quantity;
+                const barWidth = Math.min(100, Math.round((a.quantity / maxVol) * 100));
                 return `
-                    <div class="ob-row ob-ask-row" onclick="window.exchangeApp.setPrice(${ask.price})">
-                        <div class="ob-depth-bar" style="width: ${widthPct}%;"></div>
-                        <span class="text-ask">${ask.price.toFixed(2)}</span>
-                        <span class="text-right">${formatNumber(ask.quantity)}</span>
-                        <span class="text-right text-muted">${formatNumber(ask.cumulativeQuantity || askRunningTotal)}</span>
+                    <div class="ladder-row ask-row" onclick="window.exchange.copyPrice(${a.price})">
+                        <div class="depth-bar-fill" style="width: ${barWidth}%;"></div>
+                        <span class="text-ask num-font">${a.price.toFixed(2)}</span>
+                        <span class="text-right num-font">${fmtNumber(a.quantity)}</span>
+                        <span class="text-right num-font text-muted">${fmtNumber(a.cumulativeQuantity || running)}</span>
                     </div>
                 `;
             }).join('');
@@ -232,65 +326,65 @@
 
         // Render Bids (Best Bid at top down to lowest)
         if (bids.length === 0) {
-            elements.bidsContainer.innerHTML = '<div class="ob-empty-state">No active bid orders</div>';
+            el.bidsContainer.innerHTML = '<div class="book-placeholder">No active bids</div>';
         } else {
-            let bidRunningTotal = 0;
-            elements.bidsContainer.innerHTML = bids.map(bid => {
-                bidRunningTotal += bid.quantity;
-                const widthPct = Math.min(100, Math.round((bid.quantity / maxVol) * 100));
+            let running = 0;
+            el.bidsContainer.innerHTML = bids.map(b => {
+                running += b.quantity;
+                const barWidth = Math.min(100, Math.round((b.quantity / maxVol) * 100));
                 return `
-                    <div class="ob-row ob-bid-row" onclick="window.exchangeApp.setPrice(${bid.price})">
-                        <div class="ob-depth-bar" style="width: ${widthPct}%;"></div>
-                        <span class="text-bid">${bid.price.toFixed(2)}</span>
-                        <span class="text-right">${formatNumber(bid.quantity)}</span>
-                        <span class="text-right text-muted">${formatNumber(bid.cumulativeQuantity || bidRunningTotal)}</span>
+                    <div class="ladder-row bid-row" onclick="window.exchange.copyPrice(${b.price})">
+                        <div class="depth-bar-fill" style="width: ${barWidth}%;"></div>
+                        <span class="text-bid num-font">${b.price.toFixed(2)}</span>
+                        <span class="text-right num-font">${fmtNumber(b.quantity)}</span>
+                        <span class="text-right num-font text-muted">${fmtNumber(b.cumulativeQuantity || running)}</span>
                     </div>
                 `;
             }).join('');
         }
     }
 
-    function renderTrades(trades) {
+    function renderTradesTape(trades) {
         if (!trades || trades.length === 0) {
-            elements.tradesFeedContainer.innerHTML = '<div class="ob-empty-state">No executed trades yet.</div>';
+            el.tradesTapeList.innerHTML = '<div class="book-placeholder">No executed trades yet.</div>';
             return;
         }
 
-        elements.tradesFeedContainer.innerHTML = trades.map(t => {
-            const timeStr = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '--:--:--';
-            const turnover = (t.price * t.quantity);
+        el.tradesTapeList.innerHTML = trades.map(t => {
+            const time = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '--:--:--';
+            const notional = t.price * t.quantity;
             return `
-                <div class="trade-row">
-                    <span class="text-muted">${timeStr}</span>
-                    <span class="text-bid">${formatCurrency(t.price)}</span>
-                    <span class="text-right">${formatNumber(t.quantity)}</span>
-                    <span class="text-right text-muted">${formatCurrency(turnover)}</span>
+                <div class="tape-row">
+                    <span class="text-muted num-font">${time}</span>
+                    <span class="text-bid num-font">${fmtMoney(t.price)}</span>
+                    <span class="text-right num-font">${fmtNumber(t.quantity)}</span>
+                    <span class="text-right num-font text-muted">${fmtMoney(notional)}</span>
                 </div>
             `;
         }).join('');
     }
 
     function renderOpenOrders(orders) {
-        elements.openOrdersCount.textContent = orders.length;
+        el.openOrdersBadge.textContent = orders.length;
         if (!orders || orders.length === 0) {
-            elements.myOpenOrdersContainer.innerHTML = '<div class="ob-empty-state">No open resting orders.</div>';
+            el.openOrdersList.innerHTML = '<div class="book-placeholder">No resting orders for this account.</div>';
             return;
         }
 
-        elements.myOpenOrdersContainer.innerHTML = orders.map(o => {
+        el.openOrdersList.innerHTML = orders.map(o => {
             const sideClass = o.side === 'BUY' ? 'text-bid' : 'text-ask';
             return `
-                <div class="open-order-card">
-                    <div class="open-order-info">
-                        <div class="open-order-main">
-                            <span class="${sideClass}">${o.side}</span> ${formatNumber(o.quantity)} ${o.symbol} @ ${formatCurrency(o.price)}
+                <div class="order-item-row">
+                    <div class="order-item-desc">
+                        <div class="order-item-main">
+                            <span class="${sideClass}">${o.side}</span> ${fmtNumber(o.quantity)} ${o.symbol} @ ${fmtMoney(o.price)}
                         </div>
-                        <div class="open-order-sub">
-                            Status: ${o.status} | Rem: ${formatNumber(o.remainingQuantity)} | ID: ${o.orderId.substring(0, 12)}
+                        <div class="order-item-sub num-font">
+                            ${o.status} | Rem: ${fmtNumber(o.remainingQuantity)} | #${o.orderId.substring(0, 8)}
                         </div>
                     </div>
-                    <button type="button" class="btn-cancel-order" onclick="window.exchangeApp.cancelOrder('${o.orderId}')">
-                        ✕ Cancel
+                    <button type="button" class="cancel-action-btn" onclick="window.exchange.cancelOrder('${o.orderId}')">
+                        CANCEL
                     </button>
                 </div>
             `;
@@ -300,72 +394,78 @@
     function renderPortfolio(port) {
         if (!port) return;
 
-        elements.portUserFullname.textContent = `${port.fullName || port.username} (${port.username})`;
-        elements.portCashVal.textContent = formatCurrency(port.cashBalance);
-        elements.portHoldingsVal.textContent = formatCurrency(port.holdingsMarketValue);
-        elements.portNetworthVal.textContent = formatCurrency(port.totalNetWorth);
+        el.portAccountName.textContent = port.fullName || port.username;
+        el.kpiCash.textContent = fmtMoney(port.cashBalance);
+        el.kpiEquity.textContent = fmtMoney(port.holdingsMarketValue);
+        el.kpiNetworth.textContent = fmtMoney(port.totalNetWorth);
 
         const pnl = port.totalPnL || 0;
-        elements.portPnlVal.textContent = `${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}`;
-        elements.portPnlVal.className = `metric-val ${pnl >= 0 ? 'text-bid' : 'text-ask'}`;
+        el.kpiPnl.textContent = `${pnl >= 0 ? '+' : ''}${fmtMoney(pnl)}`;
+        el.kpiPnl.className = `kpi-v num-font ${pnl >= 0 ? 'text-bid' : 'text-ask'}`;
 
-        // Update Ticket Available Resources hint
+        // Available Resources calculation in Ticket
         if (state.side === 'BUY') {
-            elements.availableHint.textContent = `Avail Cash: ${formatCurrency(port.cashBalance)}`;
+            el.availResourceText.textContent = `Avail: ${fmtMoney(port.cashBalance)}`;
         } else {
-            const holding = (port.holdings || []).find(h => h.symbol === state.symbol);
-            const sharesOwned = holding ? holding.quantity : 0;
-            elements.availableHint.textContent = `Owned: ${formatNumber(sharesOwned)} sh`;
+            const hold = (port.holdings || []).find(h => h.symbol === state.symbol);
+            const qty = hold ? hold.quantity : 0;
+            el.availResourceText.textContent = `Owned: ${fmtNumber(qty)} sh`;
         }
 
-        // Render Holdings Table
+        // Holdings Table
         const holdings = port.holdings || [];
         if (holdings.length === 0) {
-            elements.holdingsTableBody.innerHTML = `
-                <tr><td colspan="8" class="text-center text-muted" style="padding: 20px;">No open stock positions currently held.</td></tr>
+            el.holdingsTbody.innerHTML = `
+                <tr><td colspan="8" class="text-center text-muted" style="padding: 24px;">No open positions in portfolio.</td></tr>
             `;
             return;
         }
 
-        elements.holdingsTableBody.innerHTML = holdings.map(h => {
-            const retPct = h.returnPercent || 0;
-            const retClass = retPct >= 0 ? 'text-bid' : 'text-ask';
+        el.holdingsTbody.innerHTML = holdings.map(h => {
+            const ret = h.returnPercent || 0;
+            const retClass = ret >= 0 ? 'text-bid' : 'text-ask';
+            const logoSvg = STOCK_LOGOS[h.symbol] || STOCK_LOGOS.AAPL;
+
             return `
                 <tr>
-                    <td style="font-weight: 700; color: var(--color-cyan);">${h.symbol}</td>
+                    <td style="font-weight: 700;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="width: 14px; height: 14px; display: inline-flex;">${logoSvg}</span>
+                            ${h.symbol}
+                        </span>
+                    </td>
                     <td class="text-muted">${h.companyName}</td>
-                    <td class="text-right">${formatNumber(h.quantity)}</td>
-                    <td class="text-right">${formatCurrency(h.averageBuyPrice)}</td>
-                    <td class="text-right">${formatCurrency(h.currentPrice)}</td>
-                    <td class="text-right" style="font-weight: 600;">${formatCurrency(h.marketValue)}</td>
-                    <td class="text-right ${retClass}">${h.unrealizedPnL >= 0 ? '+' : ''}${formatCurrency(h.unrealizedPnL)}</td>
-                    <td class="text-right ${retClass}">${h.returnPercent >= 0 ? '+' : ''}${retPct.toFixed(2)}%</td>
+                    <td class="text-right num-font">${fmtNumber(h.quantity)}</td>
+                    <td class="text-right num-font">${fmtMoney(h.averageBuyPrice)}</td>
+                    <td class="text-right num-font">${fmtMoney(h.currentPrice)}</td>
+                    <td class="text-right num-font" style="font-weight: 600;">${fmtMoney(h.marketValue)}</td>
+                    <td class="text-right num-font ${retClass}">${h.unrealizedPnL >= 0 ? '+' : ''}${fmtMoney(h.unrealizedPnL)}</td>
+                    <td class="text-right num-font ${retClass}">${h.returnPercent >= 0 ? '+' : ''}${ret.toFixed(2)}%</td>
                 </tr>
             `;
         }).join('');
     }
 
-    // =========================================================================
-    // User Interactions & Order Submission
-    // =========================================================================
-    function updateOrderEstimate() {
-        const qty = parseFloat(elements.orderQtyInput.value) || 0;
-        const price = state.orderType === 'MARKET' ? (state.stocks[state.symbol]?.currentPrice || 0) : (parseFloat(elements.orderPriceInput.value) || 0);
-        const total = qty * price;
-        elements.orderEstTotal.textContent = formatCurrency(total);
+    // -------------------------------------------------------------------------
+    // Order Calculation & Execution
+    // -------------------------------------------------------------------------
+    function recalcNotional() {
+        const qty = parseFloat(el.orderQtyInput.value) || 0;
+        const price = state.orderType === 'MARKET' ? (state.stocks[state.symbol]?.currentPrice || 0) : (parseFloat(el.orderPriceInput.value) || 0);
+        el.orderEstNotional.textContent = fmtMoney(qty * price);
     }
 
-    async function handleOrderSubmit() {
-        const qty = parseInt(elements.orderQtyInput.value, 10);
-        const price = state.orderType === 'MARKET' ? 0.0 : parseFloat(elements.orderPriceInput.value);
+    async function handleOrderSubmission() {
+        const qty = parseInt(el.orderQtyInput.value, 10);
+        const price = state.orderType === 'MARKET' ? 0.0 : parseFloat(el.orderPriceInput.value);
 
         if (!qty || qty <= 0) {
-            showOrderAlert('Please specify a positive integer share quantity.', 'danger');
+            flashAlert('Specify a positive whole share quantity.', 'err');
             return;
         }
 
         if (state.orderType === 'LIMIT' && (!price || price <= 0)) {
-            showOrderAlert('Please specify a valid limit price.', 'danger');
+            flashAlert('Enter a valid limit price.', 'err');
             return;
         }
 
@@ -378,86 +478,86 @@
         };
 
         try {
-            elements.submitOrderBtn.disabled = true;
-            elements.submitOrderBtn.textContent = 'SUBMITTING TO ENGINE...';
+            el.submitOrderBtn.disabled = true;
+            el.submitOrderBtn.textContent = 'TRANSMITTING ORDER...';
 
-            const result = await apiRequest('/api/orders', {
+            const res = await api('/api/orders', {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
 
-            showOrderAlert(`Order ${result.orderId} submitted! Status: ${result.status}`, 'success');
-            await refreshAllData();
+            flashAlert(`Order #${res.orderId.substring(0, 8)} executed: ${res.status}`, 'ok');
+            await syncAll();
         } catch (e) {
-            showOrderAlert(`Rejection: ${e.message}`, 'danger');
+            flashAlert(e.message, 'err');
         } finally {
-            elements.submitOrderBtn.disabled = false;
-            elements.submitOrderBtn.textContent = `PLACE ${state.side} ORDER`;
+            el.submitOrderBtn.disabled = false;
+            el.submitOrderBtn.textContent = `EXECUTE ${state.side} ORDER`;
         }
     }
 
     async function cancelOrder(orderId) {
         try {
-            await apiRequest(`/api/orders/${orderId}`, { method: 'DELETE' });
-            showOrderAlert(`Order ${orderId.substring(0, 8)} cancelled successfully.`, 'success');
-            await refreshAllData();
+            await api(`/api/orders/${orderId}`, { method: 'DELETE' });
+            flashAlert(`Order #${orderId.substring(0, 8)} cancelled.`, 'ok');
+            await syncAll();
         } catch (e) {
-            showOrderAlert(`Cancellation failed: ${e.message}`, 'danger');
+            flashAlert(e.message, 'err');
         }
     }
 
-    function showOrderAlert(msg, type = 'success') {
-        elements.orderAlert.textContent = msg;
-        elements.orderAlert.className = `order-alert alert-${type}`;
-        elements.orderAlert.style.display = 'block';
+    function flashAlert(text, type = 'ok') {
+        el.orderStatusMsg.textContent = text;
+        el.orderStatusMsg.className = `ticket-status-msg msg-${type}`;
+        el.orderStatusMsg.style.display = 'block';
         setTimeout(() => {
-            elements.orderAlert.style.display = 'none';
+            el.orderStatusMsg.style.display = 'none';
         }, 5000);
     }
 
-    // =========================================================================
-    // Presentation Scripted Demo Runner (Slides 07 & 11)
-    // =========================================================================
-    async function triggerDemoScenario() {
-        elements.demoModal.style.display = 'flex';
-        elements.demoModalBody.innerHTML = `
-            <div class="loading-spinner-box">
-                <div class="spinner"></div>
+    // -------------------------------------------------------------------------
+    // Scripted Presentation Scenario (Slides 07 & 11)
+    // -------------------------------------------------------------------------
+    async function executeDemoScenario() {
+        el.demoModal.style.display = 'flex';
+        el.demoModalContent.innerHTML = `
+            <div class="modal-loader">
+                <div class="monochrome-spinner"></div>
                 <p>Executing Presentation Demo Scenario against Matching Engine...</p>
             </div>
         `;
 
         try {
-            const resp = await apiRequest('/api/demo/run-scenario', { method: 'POST' });
-            renderDemoResults(resp);
-            await refreshAllData();
+            const data = await api('/api/demo/run-scenario', { method: 'POST' });
+            renderDemoBreakdown(data);
+            await syncAll();
         } catch (e) {
-            elements.demoModalBody.innerHTML = `
-                <div class="order-alert alert-danger">
-                    <strong>Demo Execution Error:</strong> ${e.message}
+            el.demoModalContent.innerHTML = `
+                <div class="ticket-status-msg msg-err">
+                    <strong>Execution Error:</strong> ${e.message}
                 </div>
             `;
         }
     }
 
-    function renderDemoResults(data) {
+    function renderDemoBreakdown(data) {
         const steps = data.steps || [];
-        elements.demoModalBody.innerHTML = `
-            <div class="demo-timeline">
+        el.demoModalContent.innerHTML = `
+            <div class="demo-breakdown-list">
                 ${steps.map(s => `
-                    <div class="demo-step-card">
-                        <span class="step-badge">STEP ${s.step}: ${s.action}</span>
-                        <div class="step-title">${s.trader ? s.trader + ' — ' : ''}${s.details || ''}</div>
+                    <div class="demo-step-tile">
+                        <span class="step-tag-pill">STEP ${s.step}: ${s.action.toUpperCase()}</span>
+                        <div class="step-headline">${s.trader ? s.trader + ' — ' : ''}${s.details || ''}</div>
                         ${s.makerPriceRule ? `
-                            <div class="step-highlight">
-                                <strong>Execution Rule:</strong> ${s.makerPriceRule} (${s.quantityMatched} shares @ $${s.executionPrice})
+                            <div class="step-rule-box">
+                                <strong>Execution:</strong> ${s.makerPriceRule} (${s.quantityMatched} sh @ $${s.executionPrice})
                             </div>
                         ` : ''}
                         ${s.aliceBalanceChange ? `
-                            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;">
+                            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
                                 <div>Alice: ${s.aliceBalanceChange}</div>
                                 <div>Bob: ${s.bobBalanceChange}</div>
-                                <div>Resting in Book: <strong>${s.aliceRemainingOrderInBook}</strong></div>
+                                <div>Resting Book Depth: <strong>${s.aliceRemainingOrderInBook}</strong></div>
                             </div>
                         ` : ''}
                     </div>
@@ -466,163 +566,162 @@
         `;
     }
 
-    // =========================================================================
-    // Event Listeners & Binding
-    // =========================================================================
-    function setupEventListeners() {
-        // Symbol selection
-        elements.symbolTabs.addEventListener('click', (e) => {
-            const btn = e.target.closest('.symbol-tab');
+    // -------------------------------------------------------------------------
+    // Event Wiring
+    // -------------------------------------------------------------------------
+    function initListeners() {
+        // Theme Toggle
+        el.themeBtn.addEventListener('click', toggleTheme);
+
+        // Equity Ticker Selection
+        el.tickerTrack.addEventListener('click', (e) => {
+            const btn = e.target.closest('.ticker-tab-btn');
             if (!btn) return;
             const sym = btn.dataset.symbol;
             if (sym && sym !== state.symbol) {
-                document.querySelectorAll('.symbol-tab').forEach(t => t.classList.remove('active'));
-                btn.classList.add('active');
                 state.symbol = sym;
-                refreshAllData();
+                document.querySelectorAll('.ticker-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.symbol === sym));
+                updateHeroHeader();
+                syncAll();
             }
         });
 
-        // Trader selection
-        elements.traderSelect.addEventListener('change', (e) => {
+        // Trader Selector
+        el.traderSelect.addEventListener('change', (e) => {
             state.trader = e.target.value;
-            // Also attempt login to update session
-            fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: state.trader, password: 'password123' })
-            }).catch(() => {});
-            refreshAllData();
+            el.traderAvatar.textContent = TRADER_AVATARS[state.trader] || 'TR';
+            syncAll();
         });
 
-        // Side toggle
-        elements.sideBuyBtn.addEventListener('click', () => {
+        // Buy / Sell Selector
+        el.sideBuyBtn.addEventListener('click', () => {
             state.side = 'BUY';
-            elements.sideBuyBtn.className = 'side-btn active-buy';
-            elements.sideSellBtn.className = 'side-btn';
-            elements.submitOrderBtn.className = 'btn btn-submit-order buy-mode';
-            elements.submitOrderBtn.textContent = 'PLACE BUY ORDER';
-            updateOrderEstimate();
+            el.sideBuyBtn.className = 'side-tab active-buy';
+            el.sideSellBtn.className = 'side-tab';
+            el.submitOrderBtn.className = 'submit-order-button btn-buy';
+            el.submitOrderBtn.textContent = 'EXECUTE BUY ORDER';
+            recalcNotional();
             if (state.portfolio) renderPortfolio(state.portfolio);
         });
 
-        elements.sideSellBtn.addEventListener('click', () => {
+        el.sideSellBtn.addEventListener('click', () => {
             state.side = 'SELL';
-            elements.sideSellBtn.className = 'side-btn active-sell';
-            elements.sideBuyBtn.className = 'side-btn';
-            elements.submitOrderBtn.className = 'btn btn-submit-order sell-mode';
-            elements.submitOrderBtn.textContent = 'PLACE SELL ORDER';
-            updateOrderEstimate();
+            el.sideSellBtn.className = 'side-tab active-sell';
+            el.sideBuyBtn.className = 'side-tab';
+            el.submitOrderBtn.className = 'submit-order-button btn-sell';
+            el.submitOrderBtn.textContent = 'EXECUTE SELL ORDER';
+            recalcNotional();
             if (state.portfolio) renderPortfolio(state.portfolio);
         });
 
-        // Order Type select
-        elements.orderTypeSelect.addEventListener('change', (e) => {
+        // Order Type Selector
+        el.orderTypeSelect.addEventListener('change', (e) => {
             state.orderType = e.target.value;
             if (state.orderType === 'MARKET') {
-                elements.priceInputGroup.style.opacity = '0.5';
-                elements.orderPriceInput.disabled = true;
+                el.priceInputRow.style.opacity = '0.4';
+                el.orderPriceInput.disabled = true;
             } else {
-                elements.priceInputGroup.style.opacity = '1';
-                elements.orderPriceInput.disabled = false;
+                el.priceInputRow.style.opacity = '1';
+                el.orderPriceInput.disabled = false;
             }
-            updateOrderEstimate();
+            recalcNotional();
         });
 
-        // Numerical input listeners
-        elements.orderPriceInput.addEventListener('input', updateOrderEstimate);
-        elements.orderQtyInput.addEventListener('input', updateOrderEstimate);
+        // Numerical input events
+        el.orderPriceInput.addEventListener('input', recalcNotional);
+        el.orderQtyInput.addEventListener('input', recalcNotional);
 
-        // Quick fractional quantity buttons
-        document.querySelectorAll('.quick-qty-btn').forEach(btn => {
+        // Fractional Sizing Buttons
+        document.querySelectorAll('.size-pill').forEach(btn => {
             btn.addEventListener('click', () => {
-                const fraction = parseFloat(btn.dataset.fraction) || 1.0;
+                const fraction = parseFloat(btn.dataset.pct) || 1.0;
                 if (!state.portfolio) return;
 
                 if (state.side === 'BUY') {
-                    const price = parseFloat(elements.orderPriceInput.value) || 200.0;
+                    const price = parseFloat(el.orderPriceInput.value) || 200.0;
                     const maxShares = Math.floor(state.portfolio.cashBalance / price);
-                    elements.orderQtyInput.value = Math.max(1, Math.floor(maxShares * fraction));
+                    el.orderQtyInput.value = Math.max(1, Math.floor(maxShares * fraction));
                 } else {
-                    const holding = (state.portfolio.holdings || []).find(h => h.symbol === state.symbol);
-                    const maxShares = holding ? holding.quantity : 0;
-                    elements.orderQtyInput.value = Math.max(1, Math.floor(maxShares * fraction));
+                    const hold = (state.portfolio.holdings || []).find(h => h.symbol === state.symbol);
+                    const maxShares = hold ? hold.quantity : 0;
+                    el.orderQtyInput.value = Math.max(1, Math.floor(maxShares * fraction));
                 }
-                updateOrderEstimate();
+                recalcNotional();
             });
         });
 
         // Submit form
         document.getElementById('order-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            handleOrderSubmit();
+            handleOrderSubmission();
         });
 
-        // Panel tabs (Trades vs My Orders)
-        elements.tabTradesFeed.addEventListener('click', () => {
-            elements.tabTradesFeed.classList.add('active');
-            elements.tabMyOrders.classList.remove('active');
-            elements.contentTradesFeed.classList.add('active');
-            elements.contentMyOrders.classList.remove('active');
+        // Right Tabs (Tape vs Orders)
+        el.tabTapeBtn.addEventListener('click', () => {
+            el.tabTapeBtn.classList.add('active');
+            el.tabOrdersBtn.classList.remove('active');
+            el.bodyTradeTape.classList.add('active');
+            el.bodyOpenOrders.classList.remove('active');
         });
 
-        elements.tabMyOrders.addEventListener('click', () => {
-            elements.tabMyOrders.classList.add('active');
-            elements.tabTradesFeed.classList.remove('active');
-            elements.contentMyOrders.classList.add('active');
-            elements.contentTradesFeed.classList.remove('active');
+        el.tabOrdersBtn.addEventListener('click', () => {
+            el.tabOrdersBtn.classList.add('active');
+            el.tabTapeBtn.classList.remove('active');
+            el.bodyOpenOrders.classList.add('active');
+            el.bodyTradeTape.classList.remove('active');
         });
 
-        // Demo Modal triggers
-        elements.runDemoBtn.addEventListener('click', triggerDemoScenario);
-        elements.modalCloseBtn.addEventListener('click', () => elements.demoModal.style.display = 'none');
-        elements.modalDismissBtn.addEventListener('click', () => elements.demoModal.style.display = 'none');
-        elements.modalRerunBtn.addEventListener('click', triggerDemoScenario);
+        // Demo Modal Triggers
+        el.runDemoBtn.addEventListener('click', executeDemoScenario);
+        el.modalCloseX.addEventListener('click', () => el.demoModal.style.display = 'none');
+        el.modalCloseAction.addEventListener('click', () => el.demoModal.style.display = 'none');
+        el.modalReplayAction.addEventListener('click', executeDemoScenario);
     }
 
-    async function refreshAllData() {
+    async function syncAll() {
         await Promise.allSettled([
-            fetchStocks(),
-            fetchOrderBook(),
-            fetchTrades(),
-            fetchPortfolio(),
-            fetchOpenOrders()
+            refreshStocks(),
+            refreshOrderBook(),
+            refreshTrades(),
+            refreshPortfolio(),
+            refreshOpenOrders()
         ]);
-        updateOrderEstimate();
+        recalcNotional();
     }
 
-    // Public API for inline onclick bindings
-    window.exchangeApp = {
-        setPrice: (price) => {
+    // Public window helper for inline callbacks
+    window.exchange = {
+        copyPrice: (price) => {
             if (state.orderType === 'LIMIT') {
-                elements.orderPriceInput.value = Number(price).toFixed(2);
-                updateOrderEstimate();
+                el.orderPriceInput.value = Number(price).toFixed(2);
+                recalcNotional();
             }
         },
         cancelOrder: cancelOrder
     };
 
-    // =========================================================================
-    // Bootstrapping
-    // =========================================================================
+    // -------------------------------------------------------------------------
+    // Initialization Loop
+    // -------------------------------------------------------------------------
     async function init() {
-        setupEventListeners();
-        await refreshAllData();
+        applyTheme(state.theme);
+        initListeners();
+        await syncAll();
 
-        // 1-second real-time polling loop
+        // 1-second high-density market polling loop
         setInterval(() => {
             if (state.isPolling) {
-                fetchOrderBook();
-                fetchTrades();
-                fetchPortfolio();
-                fetchOpenOrders();
+                refreshOrderBook();
+                refreshTrades();
+                refreshPortfolio();
+                refreshOpenOrders();
             }
         }, 1200);
 
-        // 5-second slower ticker refresh
+        // 6-second ticker strip refresh
         setInterval(() => {
-            if (state.isPolling) fetchStocks();
-        }, 5000);
+            if (state.isPolling) refreshStocks();
+        }, 6000);
     }
 
     window.addEventListener('DOMContentLoaded', init);

@@ -117,7 +117,7 @@ public class TradingDashboardView extends BorderPane {
         s1.setOrientation(javafx.geometry.Orientation.VERTICAL);
 
         // Symbol Selector Dropdown
-        symbolSelector.getItems().addAll("AAPL", "MSFT", "GOOGL", "TSLA", "NVDA");
+        symbolSelector.getItems().addAll("AAPL", "MSFT", "GOOGL", "TSLA", "NVDA", "AMZN", "META", "AMD", "PLTR", "COIN", "JPM");
         symbolSelector.setValue("AAPL");
         symbolSelector.setOnAction(e -> {
             currentSymbol = symbolSelector.getValue();

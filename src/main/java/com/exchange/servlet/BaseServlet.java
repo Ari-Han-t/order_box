@@ -80,8 +80,11 @@ public abstract class BaseServlet extends HttpServlet {
             if ("alice".equalsIgnoreCase(val)) return "u-alice-002";
             if ("bob".equalsIgnoreCase(val)) return "u-bob-003";
             if ("charlie".equalsIgnoreCase(val)) return "u-charlie-004";
+            if ("diana".equalsIgnoreCase(val)) return "u-diana-005";
+            if ("edward".equalsIgnoreCase(val)) return "u-edward-006";
+            if ("fiona".equalsIgnoreCase(val)) return "u-fiona-007";
+            if ("hedge_fund".equalsIgnoreCase(val) || "hedgefund".equalsIgnoreCase(val)) return "u-hedgefund-008";
             if ("marketmaker".equalsIgnoreCase(val) || "market_maker".equalsIgnoreCase(val)) return "u-marketmaker-001";
-            if ("demo_trader".equalsIgnoreCase(val) || "demo".equalsIgnoreCase(val)) return "u-demo-005";
             return val;
         }
 
