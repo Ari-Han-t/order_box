@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA EXCHANGE | Real-Time Electronic Stock Exchange</title>
+    <meta name="description" content="High-performance Java Electronic Stock Exchange simulation featuring a concurrent price-time priority order book, atomic matching engine, and live portfolio manager.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Top Global Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo-group">
+                <div class="logo-icon">▲</div>
+                <div>
+                    <h1 class="logo-title">AURA EXCHANGE</h1>
+                    <span class="logo-subtitle">REAL-TIME L2 MATCHING ENGINE</span>
+                </div>
+            </div>
+            <div class="engine-status" id="engine-status-pill">
+                <span class="pulse-dot"></span>
+                <span id="engine-status-text">MATCHING ENGINE ACTIVE</span>
+            </div>
+        </div>
+
+        <!-- Stock Selector Bar -->
+        <nav class="symbol-nav" aria-label="Stock Symbol Selection">
+            <div class="symbol-tabs" id="symbol-tabs-container">
+                <button class="symbol-tab active" data-symbol="AAPL" id="tab-symbol-AAPL">
+                    <span class="tab-ticker">AAPL</span>
+                    <span class="tab-price" id="nav-price-AAPL">$200.00</span>
+                </button>
+                <button class="symbol-tab" data-symbol="MSFT" id="tab-symbol-MSFT">
+                    <span class="tab-ticker">MSFT</span>
+                    <span class="tab-price" id="nav-price-MSFT">$420.00</span>
+                </button>
+                <button class="symbol-tab" data-symbol="GOOGL" id="tab-symbol-GOOGL">
+                    <span class="tab-ticker">GOOGL</span>
+                    <span class="tab-price" id="nav-price-GOOGL">$180.00</span>
+                </button>
+                <button class="symbol-tab" data-symbol="TSLA" data-symbol="TSLA" id="tab-symbol-TSLA">
+                    <span class="tab-ticker">TSLA</span>
+                    <span class="tab-price" id="nav-price-TSLA">$250.00</span>
+                </button>
+                <button class="symbol-tab" data-symbol="NVDA" id="tab-symbol-NVDA">
+                    <span class="tab-ticker">NVDA</span>
+                    <span class="tab-price" id="nav-price-NVDA">$125.00</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Right Header: Account & Demo Actions -->
+        <div class="header-right">
+            <button class="btn btn-demo" id="run-demo-btn" title="Run Presentation Slides 07 & 11 Demo">
+                <span class="demo-icon">▶</span>
+                <span>Run Demo Scenario</span>
+            </button>
+
+            <div class="trader-switch-box">
+                <label for="trader-select" class="trader-label">Trader:</label>
+                <select id="trader-select" class="trader-select">
+                    <option value="alice" selected>Alice (u-alice-002)</option>
+                    <option value="bob">Bob (u-bob-003)</option>
+                    <option value="charlie">Charlie (u-charlie-004)</option>
+                    <option value="marketmaker">Market Maker</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <main class="app-workspace">
+        <!-- Column 1: Order Book Ladder -->
+        <section class="card orderbook-card" aria-labelledby="orderbook-heading">
+            <div class="card-header">
+                <h2 id="orderbook-heading" class="card-title">ORDER BOOK (L2 DEPTH)</h2>
+                <div class="symbol-badge" id="ob-symbol-badge">AAPL</div>
+            </div>
+
+            <div class="orderbook-table-header">
+                <span>PRICE ($)</span>
+                <span class="text-right">SIZE</span>
+                <span class="text-right">TOTAL</span>
+            </div>
+
+            <!-- Asks (Sells) Container -->
+            <div class="orderbook-scroll asks-scroll" id="orderbook-asks-container">
+                <!-- Injected via JS: High to Low down to Best Ask -->
+                <div class="ob-empty-state">Loading asks...</div>
+            </div>
+
+            <!-- Center Spread Banner -->
+            <div class="spread-banner" id="orderbook-spread-banner">
+                <span class="spread-label">SPREAD</span>
+                <span class="spread-val" id="spread-value">$0.10 (0.05%)</span>
+                <span class="spread-mid" id="spread-mid">MID $200.05</span>
+            </div>
+
+            <!-- Bids (Buys) Container -->
+            <div class="orderbook-scroll bids-scroll" id="orderbook-bids-container">
+                <!-- Injected via JS: Best Bid down to lowest -->
+                <div class="ob-empty-state">Loading bids...</div>
+            </div>
+
+            <!-- Depth Balance Bar -->
+            <div class="depth-balance-bar">
+                <div class="depth-bar-bid" id="depth-bar-bid-fill" style="width: 50%;"></div>
+                <div class="depth-bar-ask" id="depth-bar-ask-fill" style="width: 50%;"></div>
+            </div>
+            <div class="depth-balance-labels">
+                <span class="bid-total-label" id="bid-total-shares">Bids: 0</span>
+                <span class="ask-total-label" id="ask-total-shares">Asks: 0</span>
+            </div>
+        </section>
+
+        <!-- Column 2: Market Ticker & Order Placement Ticket -->
+        <section class="card market-and-ticket-card">
+            <!-- Market Overview Ribbon -->
+            <div class="market-hero">
+                <div class="hero-left">
+                    <div class="hero-company" id="hero-company-name">Apple Inc.</div>
+                    <div class="hero-symbol-title" id="hero-symbol-ticker">AAPL / USD</div>
+                </div>
+                <div class="hero-center">
+                    <div class="hero-price" id="hero-last-price">$199.80</div>
+                    <div class="hero-badge badge-up" id="hero-price-change">+0.45% (+$0.90)</div>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-col">
+                        <span class="stat-lbl">BEST BID</span>
+                        <span class="stat-num text-bid" id="hero-best-bid">$200.00</span>
+                    </div>
+                    <div class="stat-col">
+                        <span class="stat-lbl">BEST ASK</span>
+                        <span class="stat-num text-ask" id="hero-best-ask">$200.10</span>
+                    </div>
+                    <div class="stat-col">
+                        <span class="stat-lbl">24H VOLUME</span>
+                        <span class="stat-num" id="hero-volume">1,240 sh</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Ticket -->
+            <div class="order-ticket-container" aria-labelledby="order-ticket-heading">
+                <h2 id="order-ticket-heading" class="visually-hidden">Order Ticket</h2>
+                <!-- Side Toggle Tabs -->
+                <div class="side-toggle">
+                    <button type="button" class="side-btn active-buy" id="side-buy-btn">BUY</button>
+                    <button type="button" class="side-btn" id="side-sell-btn">SELL</button>
+                </div>
+
+                <!-- Order Form -->
+                <form id="order-form" class="ticket-form" onsubmit="return false;">
+                    <div class="form-row">
+                        <label for="order-type-select">ORDER TYPE</label>
+                        <select id="order-type-select" class="form-control">
+                            <option value="LIMIT" selected>Limit Order</option>
+                            <option value="MARKET">Market Order</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row" id="price-input-group">
+                        <div class="label-with-hint">
+                            <label for="order-price-input">LIMIT PRICE ($)</label>
+                            <span class="hint-text" id="price-quick-hint">Click book to auto-fill</span>
+                        </div>
+                        <input type="number" id="order-price-input" class="form-control num-input" step="0.01" min="0.01" value="200.00" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="label-with-hint">
+                            <label for="order-qty-input">QUANTITY (SHARES)</label>
+                            <span class="hint-text" id="available-resource-hint">Available: $40,010.00</span>
+                        </div>
+                        <input type="number" id="order-qty-input" class="form-control num-input" step="1" min="1" value="50" required>
+                    </div>
+
+                    <!-- Quick Size Selector Buttons -->
+                    <div class="quick-size-buttons">
+                        <button type="button" class="quick-qty-btn" data-fraction="0.25">25%</button>
+                        <button type="button" class="quick-qty-btn" data-fraction="0.50">50%</button>
+                        <button type="button" class="quick-qty-btn" data-fraction="0.75">75%</button>
+                        <button type="button" class="quick-qty-btn" data-fraction="1.00">100%</button>
+                    </div>
+
+                    <!-- Order Summary Box -->
+                    <div class="order-summary-box">
+                        <div class="summary-line">
+                            <span>Estimated Total:</span>
+                            <span class="summary-value" id="order-est-total">$10,000.00</span>
+                        </div>
+                        <div class="summary-line text-muted">
+                            <span>Execution Rule:</span>
+                            <span id="order-rule-hint">Maker-Price Priority</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button type="submit" class="btn btn-submit-order buy-mode" id="submit-order-btn">
+                        PLACE BUY ORDER
+                    </button>
+
+                    <!-- Feedback Alert Message -->
+                    <div class="order-alert" id="order-feedback-alert" style="display: none;"></div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Column 3: Live Trades Tape & Open Orders -->
+        <section class="card trades-and-orders-card">
+            <div class="tab-header">
+                <button class="panel-tab-btn active" id="tab-trades-feed" type="button">
+                    RECENT TRADES
+                </button>
+                <button class="panel-tab-btn" id="tab-my-orders" type="button">
+                    MY OPEN ORDERS <span class="badge-count" id="open-orders-count">0</span>
+                </button>
+            </div>
+
+            <!-- Tab 1: Live Trades Tape -->
+            <div class="panel-tab-content active" id="content-trades-feed">
+                <div class="trades-table-header">
+                    <span>TIME</span>
+                    <span>PRICE</span>
+                    <span class="text-right">QTY</span>
+                    <span class="text-right">TURNOVER</span>
+                </div>
+                <div class="trades-scroll" id="trades-feed-container">
+                    <div class="ob-empty-state">Loading trades...</div>
+                </div>
+            </div>
+
+            <!-- Tab 2: My Open Orders -->
+            <div class="panel-tab-content" id="content-my-orders">
+                <div class="open-orders-scroll" id="my-open-orders-container">
+                    <div class="ob-empty-state">No open resting orders.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Row: Trader Account & Portfolio (Span 3 Columns) -->
+        <section class="card portfolio-card" aria-labelledby="portfolio-heading">
+            <div class="card-header">
+                <div class="portfolio-title-group">
+                    <h2 id="portfolio-heading" class="card-title">ACCOUNT PORTFOLIO & RISK SUMMARY</h2>
+                    <span class="user-fullname" id="port-user-fullname">Alice Smith (alice)</span>
+                </div>
+                <div class="portfolio-metrics-pill-group">
+                    <div class="metric-pill">
+                        <span class="metric-lbl">CASH BALANCE</span>
+                        <span class="metric-val" id="port-cash-val">$40,010.00</span>
+                    </div>
+                    <div class="metric-pill">
+                        <span class="metric-lbl">HOLDINGS VALUE</span>
+                        <span class="metric-val" id="port-holdings-val">$60,960.00</span>
+                    </div>
+                    <div class="metric-pill">
+                        <span class="metric-lbl">TOTAL NET WORTH</span>
+                        <span class="metric-val text-cyan" id="port-networth-val">$100,970.00</span>
+                    </div>
+                    <div class="metric-pill">
+                        <span class="metric-lbl">UNREALIZED P&L</span>
+                        <span class="metric-val text-bid" id="port-pnl-val">+$520.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Holdings Table -->
+            <div class="table-container">
+                <table class="holdings-table" aria-label="Portfolio Holdings Breakdown">
+                    <thead>
+                        <tr>
+                            <th>SYMBOL</th>
+                            <th>COMPANY</th>
+                            <th class="text-right">SHARES</th>
+                            <th class="text-right">AVG COST</th>
+                            <th class="text-right">MARKET PRICE</th>
+                            <th class="text-right">MARKET VALUE</th>
+                            <th class="text-right">UNREALIZED P&L</th>
+                            <th class="text-right">RETURN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdings-table-body">
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">Loading portfolio holdings...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Slide 07 & 11 Live Demo Scenario Modal Dialog -->
+    <div class="modal-backdrop" id="demo-modal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Presentation Demo Scenario (Slides 07 & 11)</h3>
+                    <p class="modal-subtitle">Maker-Price Priority, Atomic Partial Fill & Cash/Stock Isolation</p>
+                </div>
+                <button type="button" class="modal-close-btn" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body" id="demo-modal-body">
+                <div class="loading-spinner-box">
+                    <div class="spinner"></div>
+                    <p>Executing scenario over REST API...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modal-dismiss-btn">Close</button>
+                <button type="button" class="btn btn-demo" id="modal-rerun-btn">Run Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/app.js"></script>
+</body>
+</html>

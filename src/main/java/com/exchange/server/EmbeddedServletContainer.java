@@ -76,6 +76,11 @@ public class EmbeddedServletContainer {
         context.addServlet(new ServletHolder(new TradeServlet(tradingService)), "/trades");
         context.addServlet(new ServletHolder(new PortfolioServlet(portfolioService)), "/portfolio");
 
+        // Web Frontend Dashboard at root / and static assets /css/*, /js/*
+        context.addServlet(new ServletHolder(new WebFrontendServlet()), "/");
+        context.addServlet(new ServletHolder(new WebFrontendServlet()), "/css/*");
+        context.addServlet(new ServletHolder(new WebFrontendServlet()), "/js/*");
+
         server.setHandler(context);
         server.start();
 
